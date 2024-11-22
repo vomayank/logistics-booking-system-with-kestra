@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: logistics_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_MULTIPLE_DATABASES: logistics_db,kestra
+    volumes:
+      - ./docker-postgresql-multiple-databases:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kestra:
+    image: kestra/kestra:latest-full
+    container_name: logistics_kestra
+    command: server standalone
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      KESTRA_CONFIGURATION: |
+        kestra:
+          repository:
+            type: postgres
+          queue:
+            type: postgres
+          storage:
+            type: local
+            local:
+              basePath: /opt/kestra/storage
+          server:
+            basic-auth:
+              enabled: false
+            endpoints:
+              all:
+                enabled: true
+              health:
+                enabled: true
+          flows:
+            auto-load:
+              enabled: true
+              directory: /opt/kestra/workflows
+              patterns:
+                - "**/*.yml"
+                - "**/*.yaml"
+          variables:
+            env: development
+          webserver:
+            port: 8081
+            access-log:
+              enabled: true
+          metrics:
+            enabled: true
+        datasources:
+          postgres:
+            url: jdbc:postgresql://postgres:5432/kestra
+            driverClassName: org.postgresql.Driver
+            username: postgres
+            password: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./workflows:/opt/kestra/workflows:ro
+      - kestra_storage:/opt/kestra/storage
+    user: root
+
+volumes:
+  postgres_data:
+  kestra_storage:

@@ -1,0 +1,40 @@
+id: logistics-booking-flow
+namespace: logistics
+
+inputs:
+  - id: bookingId
+    type: STRING
+    required: true
+    description: "UUID of the booking"
+  - id: customerId
+    type: STRING
+    required: true
+    description: "ID of the customer"
+  - id: deliveryAddress
+    type: STRING
+    required: true
+    description: "Delivery address"
+  - id: scheduledDate
+    type: DATETIME
+    required: true
+    description: "Scheduled delivery date and time"
+  - id: items
+    type: JSON
+    required: true
+    description: "Array of items with itemId and quantity"
+
+tasks:
+  - id: start_booking
+    type: io.kestra.plugin.core.log.Log
+    level: INFO
+    message: "Starting booking process for booking: {{inputs.bookingId}}"
+
+  - id: validate_booking
+    type: io.kestra.plugin.core.log.Log
+    level: INFO
+    message: "Validating booking details for customer: {{inputs.customerId}}"
+
+  - id: process_delivery
+    type: io.kestra.plugin.core.log.Log
+    level: INFO
+    message: "Processing delivery to: {{inputs.deliveryAddress}}"
